@@ -1,0 +1,16 @@
+image: Ubuntu2004
+
+stack: jdk 17
+
+branches:
+  only:
+    - main
+    - master
+
+build: off
+
+install:
+  - chmod +x gradlew
+
+test_script:
+  - ./gradlew test
