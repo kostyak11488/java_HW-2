@@ -1,87 +1,55 @@
 package ru.netology.cardorder;
 
-import io.github.bonigarcia.wdm.WebDriverManager;
-import org.junit.jupiter.api.*;
-import org.openqa.selenium.*;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.codeborne.selenide.Selenide.*;
+import static com.codeborne.selenide.Condition.*;
 
 public class CardOrderTest {
 
-    private WebDriver driver;
-
-    @BeforeAll
-    static void setupAll() {
-        WebDriverManager.chromedriver().setup();
-    }
-
     @BeforeEach
-    void setup() {
-        ChromeOptions options = new ChromeOptions();
-        options.addArguments("--headless");
-        options.addArguments("--no-sandbox");
-        options.addArguments("--disable-dev-shm-usage");
-
-        driver = new ChromeDriver(options);
-        driver.get("http://localhost:9999");
-    }
-
-    @AfterEach
-    void tearDown() {
-        driver.quit();
+    void setUp() {
+        open("http://localhost:9999");
     }
 
     @Test
     @DisplayName("Успешная отправка формы с валидными данными")
     void shouldSubmitFormSuccessfully() {
-        driver.findElement(By.cssSelector("input[name='name']")).sendKeys("Иван Иванов");
-        driver.findElement(By.cssSelector("input[name='phone']")).sendKeys("+79991234567");
-        driver.findElement(By.cssSelector(".checkbox__box")).click();
-        driver.findElement(By.cssSelector("button")).click();
+        $("[data-test-id=name] input").setValue("Иван Иванов");
+        $("[data-test-id=phone] input").setValue("+79991234567");
+        $("[data-test-id=agreement]").click();
+        $("button").click();
 
-        assertTrue(
-                driver.getPageSource().contains("Ваша заявка успешно отправлена"),
-                "Должно появиться сообщение об успешной отправке"
-        );
+        $("[data-test-id=order-success]")
+                .shouldBe(visible)
+                .shouldHave(text("Ваша заявка успешно отправлена"));
     }
 
     @Test
-    @DisplayName("Ошибка при вводе телефона без плюса")
+    @DisplayName("Ошибка при невалидном телефоне")
     void shouldShowErrorForInvalidPhone() {
-        driver.findElement(By.cssSelector("input[name='name']"))
-                .sendKeys("Иван Иванов");
+        $("[data-test-id=name] input").setValue("Иван Иванов");
+        $("[data-test-id=phone] input").setValue("89991234567");
+        $("[data-test-id=agreement]").click();
+        $("button").click();
 
-        driver.findElement(By.cssSelector("input[name='phone']"))
-                .sendKeys("89991234567");
-
-        driver.findElement(By.cssSelector(".checkbox__box")).click();
-        driver.findElement(By.cssSelector("button")).click();
-
-        String actualText = driver.findElement(
-                By.cssSelector("[data-test-id='phone'] .input__sub")
-        ).getText();
-
-        assertEquals(
-                "Телефон указан неверно. Должно быть 11 цифр, например, +79012345678.",
-                actualText
-        );
+        $("[data-test-id=phone].input_invalid .input__sub")
+                .shouldBe(visible)
+                .shouldHave(text("Телефон указан неверно. Должно быть 11 цифр, например, +79012345678."));
     }
-
 
 
     @Test
     @DisplayName("Ошибка при неотмеченном чекбоксе")
-    void shouldShowErrorIfCheckboxNotChecked() {
-        driver.findElement(By.cssSelector("input[name='name']")).sendKeys("Иван Иванов");
-        driver.findElement(By.cssSelector("input[name='phone']")).sendKeys("+79991234567");
-        driver.findElement(By.cssSelector("button")).click();
+    void shouldShowErrorForUncheckedAgreement() {
+        $("[data-test-id=name] input").setValue("Иван Иванов");
+        $("[data-test-id=phone] input").setValue("+79991234567");
+        $("button").click();
 
-        assertTrue(
-                driver.getPageSource().contains("Я соглашаюсь"),
-                "Должно быть сообщение о необходимости согласия"
-        );
+        $("[data-test-id=agreement].input_invalid")
+                .shouldBe(visible);
     }
 }
+

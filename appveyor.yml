@@ -1,13 +1,12 @@
 image: ubuntu
 
-stack: jdk 17
+stack: jdk 11
 
 install:
   - chmod +x gradlew
 
 before_test:
   - java -jar artifacts/app-order.jar &
-  - sleep 10
 
 test_script:
-  - ./gradlew test
+  - ./gradlew test --info
